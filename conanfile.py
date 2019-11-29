@@ -26,20 +26,20 @@ class SipConan(ConanFile):
             self.run("hg up -C -r {rev}".format(rev = self.version))
 
     def build(self):
+        print(self.package_folder)
         with tools.chdir(self._source_subfolder):
             self.run("python2 build.py prepare")
+            cmd = ("python2 configure.py"
+                  + " -b {prefix}/bin"
+                  + " -d {prefix}/lib/python2.7/site-packages"
+                  + " -e {prefix}/include/python2.7"
+                  + " -v {prefix}/share/sip/"
+            ).format(
+                prefix = tools.unix_path(self.package_folder)
+            )            
             if tools.is_apple_os(self.settings.os):
-                self.run(("python2 configure.py"
-                      + " --deployment-target=10.12"
-                      + " -b {prefix}/bin"
-                      + " -d {prefix}/lib/python2.7/site-packages"
-                      + " -e {prefix}/include/python2.7"
-                      + " -v {prefix}/share/sip/"
-                ).format(
-                    prefix = tools.unix_path(self.package_folder)
-                ))
-            else:
-                raise("not implemented")
+                cmd += " --deployment-target=10.12"
+            self.run(cmd)
             self.run("make -j%d" % tools.cpu_count())
 
     def package(self):
